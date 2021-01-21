@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Audiolab</title>
+        <style>
+            body { font-family: Arial, Helvetica, sans-serif;text-align:center; background: #f0f5f5;}
+            h1 { font-weight: 900; font-size: 70px; text-transform: uppercase; }
+            h2 { font-size: 20px;}
+            #content {background: #ffffff; margin: 100px; padding: 50px; height: 400px;}
+            button {  font-weight: 900; font-size: 25px; text-transform: uppercase; margin: 20px; padding: 10px 20px;}
+            #textQuestion { font-size: 20px;}
+            input { margin: 15px;}
+        </style>
+    </head>
+    <body>
+        <h1>Audiolab</h1>
+        <h2>Webové rozhranie na testovanie psychoakustických parametrov sluchu</h2>
+        <div id="content"> 
+            <button id="startButton">Začni test</button>
+
+            <form id="form" action="" style="display: none;">
+                <p id="textQuestion"></p><br>
+                <label>S daným výrokom súhlasím:</label><br>
+                <input type ="radio" id="velmi" name="answer" value="1" ><label for="velmi">1 - veľmi</label>
+                <input type ="radio" id="celkom" name="answer" value="2" ><label for="celkom">2 - celkom</label>
+                <input type ="radio" id="neutralne" name="answer" value="3" ><label for="neutralne">3 - neutrálne</label>
+                <input type ="radio" id="malo" name="answer" value="4" ><label for="malo">4 - málo</label>
+                <input type ="radio" id="vobec" name="answer" value="5" ><label for="vobec">5 - vôbec</label><br>
+                <button id="sentAnswer" type="button">Odošli</button>
+            </form>
+        </div> 
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+
+            var socket = io();
+            var content = document.getElementById('content');
+            var form = document.getElementById('form');
+            var radios = document.getElementsByName('answer');
+            var start = document.getElementById('startButton');
+            var textQuestion = document.getElementById('textQuestion');
+            var sentAnswer = document.getElementById('sentAnswer');
+            /* object.addEventListener("load", function (e) {
+             var startButton = document.createElement('button id="startButton');
+             startButton.textContent = "Začni test";
+             content.appendChild(startButton);
+             }
+             ); */
+            start.addEventListener('click', function (e) {
+                start.style.display = "none";
+                socket.emit('question', '1');
+            });
+            sentAnswer.addEventListener('click', function (e) {
+                var found = 1;
+                for (var i = 0; i < radios.length; i++) {
+                    if (radios[i].checked) {
+                        var answ = radios[i].value;
+                        radios[i].checked = "";
+                        found = 0;
+                    }
+                }
+                if (found === 1) {
+                    alert("Prosím zadajte odpoveď!");
+                } else {
+                    socket.emit('answer', answ);
+                }
+            });
+
+            socket.on('questionOut', (msg) => {
+                start.style.display = "none";
+                textQuestion.textContent = msg;
+                form.style.display = "";
+                console.log('questionOut ' + msg);
+            }
+            );
+
+            socket.on('stopTest', (msg) => {
+                textQuestion.style.display = 'none';
+                form.style.display = 'none';
+                var thanks = document.createElement('h3');
+                thanks.textContent = "Toto je koniec testu, ďakujeme za vaše odpovede.";
+                content.appendChild(thanks);
+            });
+        </script>
+    </body>
+
+</html>
+
